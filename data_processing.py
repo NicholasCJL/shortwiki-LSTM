@@ -4,8 +4,8 @@ import numpy as np
 def get_data(dir):
     char_data = []
     with open(dir, 'r', encoding='utf8') as file:
-        for lines in file:
-            char_data.extend(list(lines))
+        for line in file:
+            char_data.extend(list(line))
     return char_data
 
 # split dataset into samples with n context steps and 1 answer
@@ -19,4 +19,5 @@ def split_sequence(sequence, n):
         seq_x, seq_y = sequence[i:end_ix], sequence[end_ix]
         x.append(seq_x)
         y.append(seq_y)
+    print(f"Number of samples: {len(x)}")
     return np.asarray(x), np.asarray(y)

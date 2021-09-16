@@ -21,21 +21,19 @@ CELLS_SIZE = 2
 # prefix for saved files
 prefix = "shortwiki"
 
-# load and process dataset
-dir = "input.txt"
-char_data = dp.get_data(dir) # get data as array of individual characters
-seq_data_context, seq_data_answer =\
-    dp.split_sequence(char_data, SEQUENCE_LENGTH) # split data into sequences of context and answers
+require_data = True
 
-# save processed data
-with open(f'{prefix}_data_context_{SEQUENCE_LENGTH}.pkl', 'wb') as file:
-    pickle.dump(seq_data_context, file)
+if require_data:
+    # load and process dataset
+    dir = "input.txt"
+    char_data = dp.get_data(dir) # get data as array of individual characters
+    print(f"Char data obtained with character set: {sorted(list(set(char_data)))}")
+    seq_data_context, seq_data_answer =\
+        dp.split_sequence(char_data, SEQUENCE_LENGTH) # split data into sequences of context and answers
 
-with open(f'{prefix}_data_answer_{SEQUENCE_LENGTH}.pkl', 'wb') as file:
-    pickle.dump(seq_data_answer, file)
+    # save processed data
+    with open(f'{prefix}_data_context_{SEQUENCE_LENGTH}.pkl', 'wb') as file:
+        pickle.dump(seq_data_context, file)
 
-print(len(char_data))
-print(len(seq_data_context))
-print(len(seq_data_answer))
-print(len(seq_data_context[0]))
-print(len(seq_data_answer[0]))
+    with open(f'{prefix}_data_answer_{SEQUENCE_LENGTH}.pkl', 'wb') as file:
+        pickle.dump(seq_data_answer, file)
