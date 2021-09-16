@@ -2,6 +2,7 @@ import numpy as np
 import random
 import pickle
 import keras
+from keras.utils import np_utils
 
 class Translator:
     def __init__(self, sequence):
@@ -48,22 +49,35 @@ def split_sequence(sequence, n, alert=999999999999999999):
     print(f"Number of samples: {len(x)}")
     return np.asarray(x), np.asarray(y)
 
-def save_batches(data, folder, prefix, batch_size):
+def save_batches(data, folder, prefix, batch_size, one_hot=False):
     path = f'{folder}/{prefix}'
     curr_index = 0
     batches = []
     while True:
-        if curr_index + batch_size <= len(data):
-            # add batch to list of batches
-            batches.append(data[curr_index:curr_index+batch_size])
-            curr_index += batch_size
+        if one_hot:
+            if curr_index + batch_size <= len(data):
+                # add batch to list of batches
+                batches.append([np_utils.to_categorical(sample) for sample in data[curr_index:curr_index+batch_size]])
+                curr_index += batch_size
+            else:
+                # randomly sample from all the data to fill up final batch
+                to_sample = batch_size - (len(data) - curr_index)
+                last_batch = [np_utils.to_categorical(sample) for sample in data[curr_index:]]
+                last_batch.extend([np_utils.to_categorical(sample) for sample in random.choices(data, k=to_sample)])
+                batches.append(last_batch)
+                break
         else:
-            # randomly sample from all the data to fill up final batch
-            to_sample = batch_size - (len(data) - curr_index)
-            last_batch = data[curr_index:]
-            last_batch.extend(random.choices(data, k=to_sample))
-            batches.append(last_batch)
-            break
+            if curr_index + batch_size <= len(data):
+                # add batch to list of batches
+                batches.append(data[curr_index:curr_index+batch_size])
+                curr_index += batch_size
+            else:
+                # randomly sample from all the data to fill up final batch
+                to_sample = batch_size - (len(data) - curr_index)
+                last_batch = data[curr_index:]
+                last_batch.extend(random.choices(data, k=to_sample))
+                batches.append(last_batch)
+                break
     print(f'Num batches for {prefix}: {len(batches)}')
     for i in range(len(batches)):
         with open(f'{path}_{batch_size}_{i}.pkl', 'wb') as file:
