@@ -3,7 +3,7 @@ import numpy as np
 # obtain dataset and split into character-wise array
 def get_data(dir):
     char_data = []
-    with open(dir, 'r') as file:
+    with open(dir, 'r', encoding='utf8') as file:
         for lines in file:
             char_data.extend(list(lines))
     return char_data
