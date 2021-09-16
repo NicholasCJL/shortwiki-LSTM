@@ -88,8 +88,10 @@ elif require_splitting:
     # split context_test
     dp.save_batches(context_test, 'batches/x_test', 'context_test', BATCH_SIZE, filesize=10000)
     # split answer_train
+    answer_train = np.reshape(answer_train, (len(answer_train), 1))
     dp.save_batches(answer_train, 'batches/y_train', 'answer_train', BATCH_SIZE, filesize=10000, one_hot=True)
     # split answer_test
+    answer_test = np.reshape(answer_test, (len(answer_test), 1))
     dp.save_batches(answer_test, 'batches/y_test', 'answer_test', BATCH_SIZE, filesize=10000, one_hot=True)
 
 with open(f'{prefix}_translator.pkl', 'rb') as file:

@@ -54,7 +54,7 @@ def save_batches(data, folder, prefix, batch_size, filesize=2000, one_hot=False)
     curr_index = 0
     batches = []
     seq_length = len(data[0])
-    chunk_size = int((2000 / 7) / (batch_size * seq_length / (1600))) # baseline of 7 kB
+    chunk_size = int((filesize / 7) / (batch_size * seq_length / (1600))) # baseline of 7 kB
     while True:
         if one_hot:
             if curr_index + batch_size <= len(data):
