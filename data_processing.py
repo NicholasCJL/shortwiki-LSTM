@@ -61,7 +61,7 @@ def save_batches(data, folder, prefix, batch_size):
             # randomly sample from all the data to fill up final batch
             to_sample = batch_size - (len(data) - curr_index)
             last_batch = data[curr_index:]
-            last_batch.extend(random.choice(data, k=to_sample))
+            last_batch.extend(random.choices(data, k=to_sample))
             batches.append(last_batch)
             break
     print(f'Num batches for {prefix}: {len(batches)}')
