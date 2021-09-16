@@ -99,7 +99,7 @@ def save_batches(data, folder, prefix, batch_size, filesize=2000, one_hot=False)
     # group batches into chunks to save into one file
     curr_index = 0
     while True:
-        if curr_index + chunk_size <= len(data):
+        if curr_index + chunk_size <= len(batches):
             curr_chunk = batches[curr_index:curr_index + chunk_size]
             with open(f'{path}_{batch_size}_{curr_index}_{curr_index+chunk_size-1}.pkl', 'wb') as file:
                 pickle.dump([len(curr_chunk), curr_chunk], file)
@@ -107,7 +107,7 @@ def save_batches(data, folder, prefix, batch_size, filesize=2000, one_hot=False)
                   f'of batch size {batch_size} saved to '
                   f'{path}_{batch_size}_{curr_index}_{curr_index+chunk_size-1}.pkl')
             curr_index += chunk_size
-            if curr_index == len(data):
+            if curr_index == len(batches):
                 break
         else:
             curr_chunk = batches[curr_index:]
