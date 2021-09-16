@@ -84,13 +84,13 @@ elif require_splitting:
     print(f'Verification: {context_length_train + answer_length_test == n_samples}')
 
     # split context_train
-    dp.save_batches(context_train, 'batches/x_train', 'context_train', BATCH_SIZE)
+    dp.save_batches(context_train, 'batches/x_train', 'context_train', BATCH_SIZE, filesize=10000)
     # split context_test
-    dp.save_batches(context_test, 'batches/x_test', 'context_test', BATCH_SIZE)
+    dp.save_batches(context_test, 'batches/x_test', 'context_test', BATCH_SIZE, filesize=10000)
     # split answer_train
-    dp.save_batches(answer_train, 'batches/y_train', 'answer_train', BATCH_SIZE, one_hot=True)
+    dp.save_batches(answer_train, 'batches/y_train', 'answer_train', BATCH_SIZE, filesize=10000, one_hot=True)
     # split answer_test
-    dp.save_batches(answer_test, 'batches/y_test', 'answer_test', BATCH_SIZE, one_hot=True)
+    dp.save_batches(answer_test, 'batches/y_test', 'answer_test', BATCH_SIZE, filesize=10000, one_hot=True)
 
 with open(f'{prefix}_translator.pkl', 'rb') as file:
     translator = pickle.load(file)
