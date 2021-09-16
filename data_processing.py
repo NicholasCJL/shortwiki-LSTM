@@ -49,40 +49,74 @@ def split_sequence(sequence, n, alert=999999999999999999):
     print(f"Number of samples: {len(x)}")
     return np.asarray(x), np.asarray(y)
 
-def save_batches(data, folder, prefix, batch_size, one_hot=False):
+def save_batches(data, folder, prefix, batch_size, filesize=2000, one_hot=False):
     path = f'{folder}/{prefix}'
     curr_index = 0
     batches = []
+    seq_length = len(data[0])
+    chunk_size = (2000 // 7) // (batch_size * seq_length / (1600)) # baseline of 7 kB
     while True:
         if one_hot:
             if curr_index + batch_size <= len(data):
                 # add batch to list of batches
-                batches.append([np_utils.to_categorical(sample) for sample in data[curr_index:curr_index+batch_size]])
+                new_batch = [np_utils.to_categorical(sample) for sample in data[curr_index:curr_index+batch_size]]
+                len_one_hot = new_batch[0]
+                np_batch = np.reshape(new_batch, (batch_size, seq_length, len_one_hot))
+                batches.append(np_batch)
                 curr_index += batch_size
+                if curr_index == len(data):
+                    break
             else:
                 # randomly sample from all the data to fill up final batch
                 to_sample = batch_size - (len(data) - curr_index)
                 last_batch = [np_utils.to_categorical(sample) for sample in data[curr_index:]]
-                last_batch.extend([np_utils.to_categorical(sample) for sample in random.choices(data, k=to_sample)])
-                batches.append(last_batch)
+                to_add = np.asarray([np_utils.to_categorical(sample) for sample in random.choices(data, k=to_sample)])
+                last_batch = np.append(last_batch, to_add, 0)
+                len_one_hot = last_batch[0]
+                np_batch = np.reshape(last_batch, (batch_size, seq_length, len_one_hot))
+                batches.append(np_batch)
                 break
         else:
             if curr_index + batch_size <= len(data):
                 # add batch to list of batches
-                batches.append(data[curr_index:curr_index+batch_size])
+                new_batch = data[curr_index:curr_index+batch_size]
+                np_batch = np.reshape(new_batch, (batch_size, seq_length, 1))
+                batches.append(np_batch)
                 curr_index += batch_size
+                if curr_index == len(data):
+                    break
             else:
                 # randomly sample from all the data to fill up final batch
                 to_sample = batch_size - (len(data) - curr_index)
                 last_batch = data[curr_index:]
-                last_batch.extend(random.choices(data, k=to_sample))
-                batches.append(last_batch)
+                to_add = np.asarray(random.choices(data, k=to_sample))
+                last_batch = np.append(last_batch, to_add, 0)
+                np_batch = np.reshape(last_batch, (batch_size, seq_length, 1))
+                batches.append(np_batch)
                 break
+
     print(f'Num batches for {prefix}: {len(batches)}')
-    for i in range(len(batches)):
-        with open(f'{path}_{batch_size}_{i}.pkl', 'wb') as file:
-            pickle.dump(batches[i], file)
-        print(f'Batch {i} of batch size {batch_size} saved to {path}_{batch_size}_{i}.pkl')
+    # group batches into chunks to save into one file
+    curr_index = 0
+    while True:
+        if curr_index + chunk_size <= len(data):
+            curr_chunk = batches[curr_index:curr_index + chunk_size]
+            with open(f'{path}_{batch_size}_{curr_index}_{curr_index+chunk_size-1}.pkl', 'wb') as file:
+                pickle.dump([len(curr_chunk), curr_chunk], file)
+            print(f'{len(curr_chunk)} batches {curr_index} to {curr_index+chunk_size-1} '
+                  f'of batch size {batch_size} saved to '
+                  f'{path}_{batch_size}_{curr_index}_{curr_index+chunk_size-1}.pkl')
+            curr_index += chunk_size
+            if curr_index == len(data):
+                break
+        else:
+            curr_chunk = batches[curr_index:]
+            with open(f'{path}_{batch_size}_{curr_index}_{curr_index+chunk_size-1}.pkl', 'wb') as file:
+                pickle.dump([len(curr_chunk), curr_chunk], file)
+            print(f'{len(curr_chunk)} batches {curr_index} to {curr_index + chunk_size - 1} '
+                  f'of batch size {batch_size} saved to '
+                  f'{path}_{batch_size}_{curr_index}_{curr_index + chunk_size - 1}.pkl')
+            break
 
     return
 

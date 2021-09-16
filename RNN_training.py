@@ -28,6 +28,7 @@ train_portion = 0.8
 prefix = "shortwiki"
 
 require_data = False
+require_splitting = True
 
 if require_data:
     # load and process dataset
@@ -58,7 +59,7 @@ if require_data:
         pickle.dump(translator, file)
         print('Translator saved.')
 
-else:
+elif require_splitting:
     # load data from file
     with open(f'{prefix}_data_context_{SEQUENCE_LENGTH}.pkl', 'rb') as file:
         seq_data_context = pickle.load(file)
@@ -68,33 +69,34 @@ else:
         seq_data_answer = pickle.load(file)
         print('Answers loaded.')
 
-    with open(f'{prefix}_translator.pkl', 'rb') as file:
-        translator = pickle.load(file)
-        print('Translator loaded.')
+    # split dataset into train and test
+    n_samples = len(seq_data_context)
+    n_train = int(train_portion * n_samples)
+    context_train, context_test = seq_data_context[:n_train], seq_data_context[n_train:]
+    answer_train, answer_test = seq_data_answer[:n_train], seq_data_answer[n_train:]
+
+    context_length_train, context_length_test = len(context_train), len(context_test)
+    answer_length_train, answer_length_test = len(answer_train), len(answer_test)
+
+    print(f'Num samples: {n_samples}')
+    print(f'Num train: {context_length_train}')
+    print(f'Num test: {answer_length_test}')
+    print(f'Verification: {context_length_train + answer_length_test == n_samples}')
+
+    # split context_train
+    dp.save_batches(context_train, 'batches/x_train', 'context_train', BATCH_SIZE)
+    # split context_test
+    dp.save_batches(context_test, 'batches/x_test', 'context_test', BATCH_SIZE)
+    # split answer_train
+    dp.save_batches(answer_train, 'batches/y_train', 'answer_train', BATCH_SIZE, one_hot=True)
+    # split answer_test
+    dp.save_batches(answer_test, 'batches/y_test', 'answer_test', BATCH_SIZE, one_hot=True)
+
+with open(f'{prefix}_translator.pkl', 'rb') as file:
+    translator = pickle.load(file)
+    print('Translator loaded.')
 
 
-# split dataset into train and test
-n_samples = len(seq_data_context)
-n_train = int(0.8 * n_samples)
-context_train, context_test = seq_data_context[:n_train], seq_data_context[n_train:]
-answer_train, answer_test = seq_data_answer[:n_train], seq_data_answer[n_train:]
-
-context_length_train, context_length_test = len(context_train), len(context_test)
-answer_length_train, answer_length_test = len(answer_train), len(answer_test)
-
-print(f'Num samples: {n_samples}')
-print(f'Num train: {context_length_train}')
-print(f'Num test: {answer_length_test}')
-print(f'Verification: {context_length_train + answer_length_test == n_samples}')
-
-# reshape data
-X_train = np.reshape(context_train, (context_length_train, SEQUENCE_LENGTH, 1))
-X_test = np.reshape(context_test, (context_length_test, SEQUENCE_LENGTH, 1))
-# one-hot encoding of output
-y_train = np_utils.to_categorical(answer_train)
-y_test = np_utils.to_categorical(answer_test)
-
-print(X_train.shape, y_train.shape)
 
 
 # # define model
