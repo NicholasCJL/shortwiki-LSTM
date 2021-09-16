@@ -49,34 +49,13 @@ def split_sequence(sequence, n, alert=999999999999999999):
     print(f"Number of samples: {len(x)}")
     return np.asarray(x), np.asarray(y)
 
-def save_batches(data, folder, prefix, batch_size, filesize=2000, one_hot=False):
+def save_batches(data, folder, prefix, batch_size, filesize=2000): # one-hot encoding to be done on batch generation
     path = f'{folder}/{prefix}'
     curr_index = 0
     batches = []
     seq_length = len(data[0])
     chunk_size = int((filesize / 7) / (batch_size * seq_length / (1600))) # baseline of 7 kB
     while True:
-        if one_hot:
-            if curr_index + batch_size <= len(data):
-                # add batch to list of batches
-                new_batch = [np_utils.to_categorical(sample) for sample in data[curr_index:curr_index+batch_size]]
-                len_one_hot = new_batch[0]
-                np_batch = np.reshape(new_batch, (batch_size, seq_length, len_one_hot))
-                batches.append(np_batch)
-                curr_index += batch_size
-                if curr_index == len(data):
-                    break
-            else:
-                # randomly sample from all the data to fill up final batch
-                to_sample = batch_size - (len(data) - curr_index)
-                last_batch = [np_utils.to_categorical(sample) for sample in data[curr_index:]]
-                to_add = np.asarray([np_utils.to_categorical(sample) for sample in random.choices(data, k=to_sample)])
-                last_batch = np.append(last_batch, to_add, 0)
-                len_one_hot = last_batch[0]
-                np_batch = np.reshape(last_batch, (batch_size, seq_length, len_one_hot))
-                batches.append(np_batch)
-                break
-        else:
             if curr_index + batch_size <= len(data):
                 # add batch to list of batches
                 new_batch = data[curr_index:curr_index+batch_size]
