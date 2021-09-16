@@ -76,13 +76,27 @@ else:
 # split dataset into train and test
 n_samples = len(seq_data_context)
 n_train = int(0.8 * n_samples)
-x_train, x_test = seq_data_context[:n_train], seq_data_context[n_train:]
-y_train, y_test = seq_data_answer[:n_train], seq_data_answer[n_train:]
+context_train, context_test = seq_data_context[:n_train], seq_data_context[n_train:]
+answer_train, answer_test = seq_data_answer[:n_train], seq_data_answer[n_train:]
+
+context_length_train, context_length_test = len(context_train), len(context_test)
+answer_length_train, answer_length_test = len(answer_train), len(answer_test)
 
 print(f'Num samples: {n_samples}')
-print(f'Num train: {len(x_train)}')
-print(f'Num test: {len(y_test)}')
+print(f'Num train: {context_length_train}')
+print(f'Num test: {answer_length_test}')
+print(f'Verification: {context_length_train + answer_length_test == n_samples}')
+
+# reshape data
+X_train = np.reshape(context_train, (context_length_train, SEQUENCE_LENGTH, 1))
+X_test = np.reshape(context_test, (context_length_test, SEQUENCE_LENGTH, 1))
+# one-hot encoding of output
+y_train = np_utils.to_categorical(answer_train)
+y_test = np_utils.to_categorical(answer_test)
+
+print(X_train.shape, y_train.shape)
+
 
 # # define model
-# model = Sequential
-# model.add(LSTM(HIDDEN_LAYER_SIZE))
+# model = Sequential()
+# model.add(LSTM(HIDDEN_LAYER_SIZE, input_shape))
