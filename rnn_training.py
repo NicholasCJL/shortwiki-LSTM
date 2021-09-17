@@ -1,10 +1,6 @@
 import numpy as np
 import data_processing as dp
 import tensorflow as tf
-from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import LSTM
-from tensorflow.keras.layers import Dropout
 from keras.callbacks import ModelCheckpoint
 from keras.utils import np_utils
 from keras import backend as K
@@ -17,9 +13,8 @@ import pickle
 BATCH_SIZE = 32
 SEQUENCE_LENGTH = 50
 LEARNING_RATE = 0.01
-DECAY_RATE = 0.97
+# DECAY_RATE = 0.97
 HIDDEN_LAYER_SIZE = 256
-CELLS_SIZE = 2
 
 # train/test split (0-1)
 train_portion = 0.8
@@ -83,16 +78,21 @@ elif require_splitting:
     print(f'Num test: {answer_length_test}')
     print(f'Verification: {context_length_train + answer_length_test == n_samples}')
 
-    # split context_train
-    dp.save_batches(context_train, 'batches/x_train', 'context_train', BATCH_SIZE, filesize=10000)
-    # split context_test
-    dp.save_batches(context_test, 'batches/x_test', 'context_test', BATCH_SIZE, filesize=10000)
-    # split answer_train
-    answer_train = np.reshape(answer_train, (len(answer_train), 1))
-    dp.save_batches(answer_train, 'batches/y_train', 'answer_train', BATCH_SIZE, filesize=10000)
-    # split answer_test
-    answer_test = np.reshape(answer_test, (len(answer_test), 1))
-    dp.save_batches(answer_test, 'batches/y_test', 'answer_test', BATCH_SIZE, filesize=10000)
+    # split train
+    dp.save_batches(context_train, answer_train, 'batches/train', 'context_answer', BATCH_SIZE, filesize=1000)
+    # split test
+    dp.save_batches(context_test, answer_test, 'batches/test', 'context_answer', BATCH_SIZE, filesize=1000)
+
+    # # split context_train
+    # dp.save_batches(context_train, 'batches/x_train', 'context_train', BATCH_SIZE, filesize=10000)
+    # # split context_test
+    # dp.save_batches(context_test, 'batches/x_test', 'context_test', BATCH_SIZE, filesize=10000)
+    # # split answer_train
+    # answer_train = np.reshape(answer_train, (len(answer_train), 1))
+    # dp.save_batches(answer_train, 'batches/y_train', 'answer_train', BATCH_SIZE, filesize=10000)
+    # # split answer_test
+    # answer_test = np.reshape(answer_test, (len(answer_test), 1))
+    # dp.save_batches(answer_test, 'batches/y_test', 'answer_test', BATCH_SIZE, filesize=10000)
 
 with open(f'{prefix}_translator.pkl', 'rb') as file:
     translator = pickle.load(file)
