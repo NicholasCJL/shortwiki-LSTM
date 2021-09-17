@@ -1,0 +1,19 @@
+'len.pkl' file:
+    (int) num_batches in entire folder
+
+chunk file:
+    [num_batches in chunk, chunk]
+
+chunk:
+    [(ndarray) x, (ndarray) y]
+
+x:
+    shape: (batch_size, sequence_length, 1)
+    e.g. [[[1], [2], [3],...[k]], ...]
+    Array of sequences, each sequence is an array of a 1-length vector, each 1-length vector is a character in the time-series
+
+y:
+    shape: (batch_size, 1, 1)
+    e.g. [[[1]], [[2]], ...]
+    Array of single-valued sequences, each sequence is an array of 1 1-length vector, each 1-length vector is the answer to x-time-series
+    Single-valued sequences to be converted into array of 1 one-hot vector.
