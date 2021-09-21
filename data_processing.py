@@ -8,7 +8,8 @@ from keras.utils import np_utils
 # generator for batch training
 class BatchGenerator(Sequence):
     def __init__(self, batch_path, translator, shuffle=True):
-        self.files = os.listdir(batch_path)
+        self.batch_path = batch_path
+        self.files = os.listdir(self.batch_path)
         self.files.remove('len.pkl')
         self.num_chunks = len(self.files)
         self.shuffle = shuffle
@@ -42,7 +43,7 @@ class BatchGenerator(Sequence):
         curr_index = 0
         # loop through each chunk and index it
         for file_num in range(self.num_chunks):
-            with open(f'{batch_path}/{self.files[file_num]}', 'rb') as file:
+            with open(f'{self.batch_path}/{self.files[file_num]}', 'rb') as file:
                 curr_chunk_size, chunk = pickle.load(file)
             for batch_num in range(curr_chunk_size):
                 self.indices[curr_index] = (file_num, batch_num)
@@ -66,8 +67,8 @@ class BatchGenerator(Sequence):
             new_batch.append(new_sequence)
 
         new_batch = np.asarray(new_batch)
-        if (batch_size != new_batch.shape[0]) or (sequence_length != new_batch.shape[1])
-            or (self.vocab_length != new_batch.shape[2]):
+        if (batch_size != new_batch.shape[0]) or (sequence_length != new_batch.shape[1]) \
+                or (self.vocab_length != new_batch.shape[2]):
             print("Error: new_batch shape: new_batch.shape")
         return new_batch
 
@@ -95,7 +96,7 @@ class BatchGenerator(Sequence):
         file_num, batch_num = self.indices[index]
 
         # obtain batch
-        with open(f'{batch_path}/{self.files[file_num]}', 'rb') as file:
+        with open(f'{self.batch_path}/{self.files[file_num]}', 'rb') as file:
             _, chunk = pickle.load(file)
 
         curr_batch = chunk[batch_num]
