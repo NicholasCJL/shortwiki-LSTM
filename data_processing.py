@@ -7,59 +7,141 @@ from keras.utils import np_utils
 
 # generator for batch training
 class BatchGenerator(Sequence):
-    def __init__(self, batch_path, translator, one_hot, shuffle=True):
+    def __init__(self, batch_path, translator, shuffle=True):
         self.files = os.listdir(batch_path)
+        self.files.remove('len.pkl')
+        self.num_chunks = len(self.files)
         self.shuffle = shuffle
-        self.one_hot = one_hot
 
-        if self.one_hot:
-            self.translator = translator # for one-hot encoding
-            self.generate_one_hot()
+        # generate one-hot encoding
+        self.translator = translator
+        self.generate_one_hot()
 
         # total number of batches
         with open(f'{batch_path}/len.pkl', 'rb') as file:
             self.length = pickle.load(file)
-        self.files.remove('len.pkl') # remove length file from chunk list
 
         if self.shuffle:
             random.shuffle(self.files)
 
-        # load up first chunk
-        with open(f'{batch_path}/{self.files[0]}', 'rb') as file:
-            self.curr_chunk_size, self.chunk = pickle.load(file)
-
-        self.chunk_counter = 0 # counter for chunk number
-        self.batch_counter = 0 # counter for batch number in chunk
-
-    def generate_one_hot(self): # generate a one hot encoding on the vocab
+    # generate a one hot encoding on the vocab
+    def generate_one_hot(self):
         vocab = self.translator.vocab
         self.vocab_length = len(vocab)
         self.one_hot_dict = {}
+        self.reverse_one_hot = {}
         for i in range(self.vocab_length):
             curr_encoding = np.zeros(self.vocab_length)
             curr_encoding[i] = 1.0
             self.one_hot_dict[i] = curr_encoding
+            self.reverse_one_hot[curr_encoding] = [i]
 
+    # generate indices for batches
+    def generate_indices(self):
+        self.indices = {}
+        curr_index = 0
+        # loop through each chunk and index it
+        for file_num in range(self.num_chunks):
+            with open(f'{batch_path}/{self.files[file_num]}', 'rb') as file:
+                curr_chunk_size, chunk = pickle.load(file)
+            for batch_num in range(curr_chunk_size):
+                self.indices[curr_index] = (file_num, batch_num)
+                curr_index += 1
+
+    # one-hot encoding for batch
+    def encode_x(self, batch):
+        batch_size, sequence_length, indv = batch.shape
+        if indv != 1:
+            # raise error
+            print(f'indv = {indv}')
+            k = [1]
+            print(k[1])
+
+        new_batch = []
+        for sequence in range(batch_size):
+            new_sequence = []
+            for entry in range(sequence):
+                key = batch[sequence][entry][0]
+                new_sequence.append(self.one_hot_dict[key])
+            new_batch.append(new_sequence)
+
+        new_batch = np.asarray(new_batch)
+        if (batch_size != new_batch.shape[0]) or (sequence_length != new_batch.shape[1])
+            or (self.vocab_length != new_batch.shape[2]):
+            print("Error: new_batch shape: new_batch.shape")
+        return new_batch
+
+    # total number of batches for keras to calculate epoch size
     def __len__(self):
         return self.length
 
+    # yield one batch at index
     def __getitem__(self, index):
-        if self.batch_counter < self.curr_chunk_size: # load next batch in chunk
-            curr_batch = self.chunk[self.batch_counter]
-            self.batch_counter += 1
-            batch_length = curr_batch.shape[0]
-            # convert to one-hot encoding, only implemented for output
-            # (batch_size, 1, 1) -> (batch_size, 1, one-hot dims)
-            if self.one_hot:
-                new_batch = []
-                for i in range(batch_length)
-                    one_hot_out = self.one_hot_dict[curr_batch[i][0][0]]
-                    new_batch.append(one_hot_out)
-                new_batch_np = np.asarray(new_batch)
-                new_batch_np = new_batch_np.reshape((batch_length, 1, self.vocab_length))
-                curr_batch = new_batch_np
+        # obtain file and batch number corresponding to index
+        file_num, batch_num = self.indices[index]
+
+        # obtain batch
+        with open(f'{batch_path}/{self.files[file_num]}', 'rb') as file:
+            _, chunk = pickle.load(file)
 
 
+
+# REWRITE HERE
+# # generator for batch training
+# class BatchGenerator(Sequence):
+#     def __init__(self, batch_path, translator, one_hot, shuffle=True):
+#         self.files = os.listdir(batch_path)
+#         self.shuffle = shuffle
+#         self.one_hot = one_hot
+#
+#         if self.one_hot:
+#             self.translator = translator # for one-hot encoding
+#             self.generate_one_hot()
+#
+#         # total number of batches
+#         with open(f'{batch_path}/len.pkl', 'rb') as file:
+#             self.length = pickle.load(file)
+#         self.files.remove('len.pkl') # remove length file from chunk list
+#
+#         if self.shuffle:
+#             random.shuffle(self.files)
+#
+#         # load up first chunk
+#         with open(f'{batch_path}/{self.files[0]}', 'rb') as file:
+#             self.curr_chunk_size, self.chunk = pickle.load(file)
+#
+#         self.chunk_counter = 0 # counter for chunk number
+#         self.batch_counter = 0 # counter for batch number in chunk
+#
+#     def generate_one_hot(self): # generate a one hot encoding on the vocab
+#         vocab = self.translator.vocab
+#         self.vocab_length = len(vocab)
+#         self.one_hot_dict = {}
+#         for i in range(self.vocab_length):
+#             curr_encoding = np.zeros(self.vocab_length)
+#             curr_encoding[i] = 1.0
+#             self.one_hot_dict[i] = curr_encoding
+#
+#     def __len__(self):
+#         return self.length
+#
+#     def __getitem__(self, index):
+#         if self.batch_counter < self.curr_chunk_size: # load next batch in chunk
+#             curr_batch = self.chunk[self.batch_counter]
+#             self.batch_counter += 1
+#             batch_length = curr_batch.shape[0]
+#             # convert to one-hot encoding, only implemented for output
+#             # (batch_size, 1, 1) -> (batch_size, 1, one-hot dims)
+#             if self.one_hot:
+#                 new_batch = []
+#                 for i in range(batch_length)
+#                     one_hot_out = self.one_hot_dict[curr_batch[i][0][0]]
+#                     new_batch.append(one_hot_out)
+#                 new_batch_np = np.asarray(new_batch)
+#                 new_batch_np = new_batch_np.reshape((batch_length, 1, self.vocab_length))
+#                 curr_batch = new_batch_np
+#
+#
 
 
 class Translator:
