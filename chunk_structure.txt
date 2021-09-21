@@ -5,6 +5,9 @@ chunk file:
     [num_batches in chunk, chunk]
 
 chunk:
+    [[batch_0], [batch_1], ...]
+
+batch:
     [(ndarray) x, (ndarray) y]
 
 x:
