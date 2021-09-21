@@ -105,7 +105,7 @@ model = rnn_model.seq_model((BATCH_SIZE, SEQUENCE_LENGTH, len(translator.vocab))
 
 # checkpoint location
 filepath = "model/weights-improvement-{epoch:02d}-{loss:.4f}.hdf5"
-checkpoint = ModelCheckpoint(Filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
+checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [checkpoint]
 
 # fitting
