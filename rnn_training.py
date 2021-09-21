@@ -1,5 +1,6 @@
 import numpy as np
 import data_processing as dp
+import rnn_model
 import tensorflow as tf
 from keras.callbacks import ModelCheckpoint
 from keras.utils import np_utils
@@ -13,7 +14,7 @@ import pickle
 BATCH_SIZE = 32
 SEQUENCE_LENGTH = 50
 LEARNING_RATE = 0.01
-# DECAY_RATE = 0.97
+DROPOUT_RATE = 0.1
 HIDDEN_LAYER_SIZE = 256
 
 # train/test split (0-1)
@@ -23,7 +24,7 @@ train_portion = 0.8
 prefix = "shortwiki"
 
 require_data = False
-require_splitting = True
+require_splitting = False
 
 if require_data:
     # load and process dataset
@@ -98,9 +99,17 @@ with open(f'{prefix}_translator.pkl', 'rb') as file:
     translator = pickle.load(file)
     print('Translator loaded.')
 
+# get model
+model = rnn_model.seq_model((BATCH_SIZE, SEQUENCE_LENGTH, len(translator.vocab)), HIDDEN_LAYER_SIZE,
+                            len(translator.vocab), DROPOUT_RATE, LEARNING_RATE)
 
+# checkpoint location
+filepath = "model/weights-improvement-{epoch:02d}-{loss:.4f}.hdf5"
+checkpoint = ModelCheckpoint(Filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
+callbacks_list = [checkpoint]
 
+# fitting
+training_batch_generator = dp.BatchGenerator('batches/train', translator)
+validation_batch_generator = dp.BatchGenerator('batches/test', translator)
+model.fit(training_batch_generator, epochs=200, verbose=2, callbacks=callbacks_list, validation_data=validation_batch_generator)
 
-# # define model
-# model = Sequential()
-# model.add(LSTM(HIDDEN_LAYER_SIZE, input_shape))
