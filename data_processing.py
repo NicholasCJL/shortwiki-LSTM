@@ -71,6 +71,20 @@ class BatchGenerator(Sequence):
             print("Error: new_batch shape: new_batch.shape")
         return new_batch
 
+    def decode_batch(self, batch):
+        batch_size, sequence_length, _ = batch.shape
+        new_batch = []
+
+        for sequence in range(batch_size):
+            new_sequence = []
+            for entry in range(sequence):
+                key = batch[sequence][entry]
+                new_sequence.append(self.reverse_one_hot[key])
+            new_batch.append(new_sequence)
+
+        new_batch = np.asarray(new_batch)
+        return new_batch
+
     # total number of batches for keras to calculate epoch size
     def __len__(self):
         return self.length
@@ -109,7 +123,6 @@ class Translator:
         translator_c2i = {c: i for (i, c) in enumerate(chars)}
         translator_i2c = {i: c for (i, c) in enumerate(chars)}
         return chars, translator_c2i, translator_i2c
-
 
 
 # obtain dataset and split into character-wise array
