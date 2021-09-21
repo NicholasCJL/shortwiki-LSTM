@@ -25,6 +25,8 @@ class BatchGenerator(Sequence):
         if self.shuffle:
             random.shuffle(self.files)
 
+        self.generate_indices()
+
     # generate a one hot encoding on the vocab
     def generate_one_hot(self):
         vocab = self.translator.vocab
