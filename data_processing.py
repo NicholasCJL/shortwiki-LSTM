@@ -22,9 +22,11 @@ class BatchGenerator(Sequence):
         with open(f'{batch_path}/len.pkl', 'rb') as file:
             self.length = pickle.load(file)
 
+        self.on_epoch_end()
+
+    def on_epoch_end(self):
         if self.shuffle:
             random.shuffle(self.files)
-
         self.generate_indices()
 
     # generate a one hot encoding on the vocab
