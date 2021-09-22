@@ -100,16 +100,25 @@ with open(f'{prefix}_translator.pkl', 'rb') as file:
     print('Translator loaded.')
 
 # get model
-model = rnn_model.seq_model((BATCH_SIZE, SEQUENCE_LENGTH, len(translator.vocab)), HIDDEN_LAYER_SIZE,
+# in_shape = (SEQUENCE_LENGTH, 1)
+in_shape = (SEQUENCE_LENGTH, len(translator.vocab))
+print(in_shape)
+model = rnn_model.seq_model(in_shape, HIDDEN_LAYER_SIZE,
                             len(translator.vocab), DROPOUT_RATE, LEARNING_RATE)
 
 # checkpoint location
 filepath = "model/weights-improvement-{epoch:02d}-{loss:.4f}.hdf5"
 checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
-callbacks_list = [checkpoint]
+time_history = rnn_model.TimeHistory()
+callbacks_list = [checkpoint, time_history]
 
 # fitting
 training_batch_generator = dp.BatchGenerator('batches/train', translator)
 validation_batch_generator = dp.BatchGenerator('batches/test', translator)
-model.fit(training_batch_generator, epochs=200, verbose=2, callbacks=callbacks_list, validation_data=validation_batch_generator)
-
+model.fit(training_batch_generator,
+          validation_data=validation_batch_generator,
+          epochs=200,
+          verbose=2,
+          callbacks=callbacks_list,
+          workers=1,
+          shuffle=False)

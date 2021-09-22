@@ -28,6 +28,7 @@ class BatchGenerator(Sequence):
         if self.shuffle:
             random.shuffle(self.files)
         self.generate_indices()
+        self.prev_index = -1
 
     # generate a one hot encoding on the vocab
     def generate_one_hot(self):
@@ -39,7 +40,6 @@ class BatchGenerator(Sequence):
             curr_encoding = np.zeros(self.vocab_length)
             curr_encoding[i] = 1.0
             self.one_hot_dict[i] = curr_encoding
-            self.reverse_one_hot[curr_encoding] = [i]
 
     # generate indices for batches
     def generate_indices(self):
@@ -53,42 +53,91 @@ class BatchGenerator(Sequence):
                 self.indices[curr_index] = (file_num, batch_num)
                 curr_index += 1
 
-    # one-hot encoding for batch
-    def encode_batch(self, batch):
-        batch_size, sequence_length, indv = batch.shape
+    # one-hot encoding for y
+    def encode_y(self, y):
+        batch_size, sequence_length, indv = y.shape
         if indv != 1:
             # raise error
             print(f'indv = {indv}')
             k = [1]
             print(k[1])
 
-        new_batch = []
-        for sequence in range(batch_size):
-            new_sequence = []
-            for entry in range(sequence):
-                key = batch[sequence][entry][0]
-                new_sequence.append(self.one_hot_dict[key])
-            new_batch.append(new_sequence)
+        new_batch = [self.one_hot_dict[y[sequence][entry][0]] for sequence in range(batch_size)
+                     for entry in range(sequence_length)]
+        # for sequence in range(batch_size):
+        #     for entry in range(sequence_length):
+        #         key = y[sequence][entry][0]
+        #         new_batch.append(self.one_hot_dict[key])
 
         new_batch = np.asarray(new_batch)
-        if (batch_size != new_batch.shape[0]) or (sequence_length != new_batch.shape[1]) \
-                or (self.vocab_length != new_batch.shape[2]):
-            print("Error: new_batch shape: new_batch.shape")
+        # print(new_batch.shape)
+        # if (batch_size != new_batch.shape[0]) \
+        #         or (self.vocab_length != new_batch.shape[1]):
+        #     print("Error: new_batch shape: new_batch.shape")
         return new_batch
 
-    def decode_batch(self, batch):
-        batch_size, sequence_length, _ = batch.shape
-        new_batch = []
+    # one-hot encoding for X
+    def encode_x(self, x):
+        batch_size, sequence_length, indv = x.shape
+        if indv != 1:
+            # raise error
+            print(f'indv = {indv}')
+            k = [1]
+            print(k[1])
 
-        for sequence in range(batch_size):
-            new_sequence = []
-            for entry in range(sequence):
-                key = batch[sequence][entry]
-                new_sequence.append(self.reverse_one_hot[key])
-            new_batch.append(new_sequence)
+        new_batch = [[self.one_hot_dict[x[sequence][entry][0]] for entry in range(sequence_length)]
+                     for sequence in range(batch_size)]
+        # for sequence in range(batch_size):
+        #     new_sequence = []
+        #     for entry in range(sequence_length):
+        #         key = x[sequence][entry][0]
+        #         new_sequence.append(self.one_hot_dict[key])
+        #     new_batch.append(new_sequence)
 
         new_batch = np.asarray(new_batch)
+        # print(new_batch.shape)
+        # if (batch_size != new_batch.shape[0]) or (sequence_length != new_batch.shape[1]) \
+        #         or (self.vocab_length != new_batch.shape[2]):
+        #     print("Error: new_batch shape: new_batch.shape")
         return new_batch
+
+    # # one-hot encoding for batch
+    # def encode_batch(self, batch):
+    #     batch_size, sequence_length, indv = batch.shape
+    #     if indv != 1:
+    #         # raise error
+    #         print(f'indv = {indv}')
+    #         k = [1]
+    #         print(k[1])
+    #
+    #     new_batch = []
+    #     for sequence in range(batch_size):
+    #         new_sequence = []
+    #         for entry in range(sequence_length):
+    #             key = batch[sequence][entry][0]
+    #             new_sequence.append(self.one_hot_dict[key])
+    #         new_batch.append(new_sequence)
+    #
+    #     new_batch = np.asarray(new_batch)
+    #     print(new_batch.shape)
+    #     if (batch_size != new_batch.shape[0]) or (sequence_length != new_batch.shape[1]) \
+    #             or (self.vocab_length != new_batch.shape[2]):
+    #         print("Error: new_batch shape: new_batch.shape")
+    #     return new_batch
+
+    # def decode_batch(self, batch):
+    #     batch_size, sequence_length, _ = batch.shape
+    #     new_batch = []
+    #
+    #     for sequence in range(batch_size):
+    #         new_sequence = []
+    #         for entry in range(sequence):
+    #             key = batch[sequence][entry]
+    #             new_sequence.append(self.reverse_one_hot[key])
+    #         new_batch.append(new_sequence)
+    #
+    #     new_batch = np.asarray(new_batch)
+    #     return new_batch
 
     # total number of batches for keras to calculate epoch size
     def __len__(self):
@@ -100,13 +149,23 @@ class BatchGenerator(Sequence):
         file_num, batch_num = self.indices[index]
 
         # obtain batch
-        with open(f'{self.batch_path}/{self.files[file_num]}', 'rb') as file:
-            _, chunk = pickle.load(file)
+        # small optimisation test
+        if self.prev_index != -1:
+            prev_file_num, _ = self.indices[self.prev_index]
+        else:
+            prev_file_num = -1
 
-        curr_batch = chunk[batch_num]
+        if prev_file_num != file_num:
+            print(index)
+            with open(f'{self.batch_path}/{self.files[file_num]}', 'rb') as file:
+                _, self.curr_chunk = pickle.load(file)
+
+        curr_batch = self.curr_chunk[batch_num]
         X, y = curr_batch[0], curr_batch[1]
 
-        return self.encode_batch(X), self.encode_batch(y)
+        # return X, self.encode_batch(y)
+        self.prev_index = index
+        return self.encode_x(X), self.encode_y(y)
 
 
 class Translator:
